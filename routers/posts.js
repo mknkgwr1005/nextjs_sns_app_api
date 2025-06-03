@@ -53,7 +53,7 @@ router.get("/get_latest_post", async (req, res) => {
 
     return res.json(latestPosts);
   } catch (error) {
-    window.alert(error);
+    console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
   }
 });
