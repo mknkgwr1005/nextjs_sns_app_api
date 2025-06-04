@@ -14,26 +14,56 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   username String
-  email String @unique
+  email    String   @unique
   password String
-  posts Post[]
-  profile Profile?
+  posts    Post[]
+  profile  Profile?
+  followers Follow[] @relation("FollowerRelation")
+  following Follow[] @relation("FollowingRelation")
+  likes    Like[]
 }
 
-model Post{
-  id Int @id @default(autoincrement())
-  content String
+model Post {
+  id        Int      @id @default(autoincrement())
+  content   String
   createdAt DateTime @default(now())
-  authorId Int
-  author User @relation(fields: [authorId],references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  replies   Post[]   @relation("ReplyRelation")
+  parentId  Int?     
+  parent    Post?    @relation("ReplyRelation", fields: [parentId], references: [id])
+  likes     Like[]
+  mediaUrl  String?  // 画像や動画のURL
 }
 
-model Profile{
-  id Int @id @default(autoincrement())
-  bio String?
+model Profile {
+  id              Int     @id @default(autoincrement())
+  bio             String?
   profileImageUrl String?
-  userId Int @unique
-  user User @relation(fields: [userId],references: [id])
+  userId          Int     @unique
+  user            User    @relation(fields: [userId], references: [id])
+}
+
+model Follow {
+  id         Int  @id @default(autoincrement())
+  followerId Int
+  followingId Int
+
+  follower   User @relation("FollowerRelation", fields: [followerId], references: [id])
+  following  User @relation("FollowingRelation", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Like {
+  id      Int  @id @default(autoincrement())
+  userId  Int
+  postId  Int
+
+  user    User @relation(fields: [userId], references: [id])
+  post    Post @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
 }
