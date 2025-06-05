@@ -13,7 +13,7 @@ const PORT = 5000;
 // 🔽 Vercel の URL からのアクセスのみ許可
 app.use(
   cors({
-    origin: ["https://nextjs-sns-app.vercel.app", "http://localhost:3000"],
+    origin: "https://nextjs-sns-app.vercel.app" || "http://localhost:3000",
     credentials: true,
   })
 );
