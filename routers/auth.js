@@ -51,6 +51,14 @@ router.post("/login", async (req, res) => {
     expiresIn: "1d",
   });
 
+  // ここでcookieにセット
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // 本番環境ではtrue
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7 * 1000, // 1週間
+  });
+
   return res.json({ token });
 });
 
