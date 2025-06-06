@@ -16,6 +16,12 @@ const allowedOrigins = [
   "https://nextjs-sns-app-api-wnvl.onrender.com",
 ];
 
+// ping監視
+app.get("/api/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// CORS設定
 app.use(
   cors({
     origin: (origin, callback) => {
