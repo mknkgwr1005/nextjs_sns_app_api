@@ -10,7 +10,9 @@ router.get("/find", isAuthenticated, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
 
     if (!user) {
-      res.status(404).json({ message: "ユーザーが見つかりませんでした" });
+      return res
+        .status(404)
+        .json({ message: "ユーザーが見つかりませんでした" });
     }
 
     res.status(200).json({
