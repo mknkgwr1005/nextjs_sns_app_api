@@ -10,15 +10,17 @@ require("dotenv").config();
 
 const PORT = 5000;
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://nextjs-sns-app.vercel.app",
+  "https://nextjs-sns-app-api-wnvl.onrender.com",
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "https://nextjs-sns-app.vercel.app",
-        "https://nextjs-sns-app-api-wnvl.onrender.com",
-      ];
-      if (allowedOrigins.includes(origin)) {
+      console.log("🌐 CORS Request Origin:", origin); // ← デバッグ用ログ
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -30,7 +32,6 @@ app.use(
 
 app.use(express.json());
 
-// endpointの作成
 app.use("/api/auth", authRoute);
 app.use("/api/posts", postsRoute);
 app.use("/api/users", userRoute);
