@@ -152,27 +152,26 @@ router.post("/unfollow", isAuthenticated, async (req, res) => {
  * フォロー中かどうかを確認
  * @param {number} userId - ユーザーID
  */
-router.get("/is_following/:userId", isAuthenticated, async (req, res) => {
-  const { userId } = req.params;
+router.get(
+  "/is-following/:followerId/:followingId",
+  isAuthenticated,
+  async (req, res) => {
+    const { followerId, followingId } = req.params;
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.userId },
-      include: { following: true },
-    });
+    try {
+      const follow = await prisma.follow.findFirst({
+        where: {
+          followerId: parseInt(followerId),
+          followingId: parseInt(followingId),
+        },
+      });
 
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "ユーザーが見つかりませんでした。" });
+      res.status(200).json({ isFollowing: !!follow });
+    } catch (error) {
+      console.error("フォロー判定エラー:", error);
+      res.status(500).json({ message: "サーバーエラー" });
     }
-
-    const isFollowing = user.following.some((u) => u.id === parseInt(userId));
-
-    res.status(200).json({ isFollowing });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 module.exports = router;
