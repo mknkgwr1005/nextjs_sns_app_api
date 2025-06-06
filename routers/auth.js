@@ -53,7 +53,7 @@ router.post("/login", async (req, res) => {
 
   // ここでcookieにセット
   res.cookie("token", token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production", // 本番環境ではtrue
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7 * 1000, // 1週間

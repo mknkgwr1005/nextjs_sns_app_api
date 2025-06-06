@@ -10,10 +10,19 @@ require("dotenv").config();
 
 const PORT = 5000;
 
-// 🔽 Vercel の URL からのアクセスのみ許可
 app.use(
   cors({
-    origin: ["https://nextjs-sns-app.vercel.app", "http://localhost:3000"],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "https://nextjs-sns-app.vercel.app",
+      ];
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
