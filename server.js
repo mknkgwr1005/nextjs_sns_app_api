@@ -16,6 +16,7 @@ app.use(
       const allowedOrigins = [
         "http://localhost:3000",
         "https://nextjs-sns-app.vercel.app",
+        "https://nextjs-sns-app-api-wnvl.onrender.com",
       ];
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
