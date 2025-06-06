@@ -85,7 +85,6 @@ router.post("/follow", isAuthenticated, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      include: { following: true },
     });
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
 
@@ -95,24 +94,28 @@ router.post("/follow", isAuthenticated, async (req, res) => {
         .json({ message: "ユーザーが見つかりませんでした。" });
     }
 
-    // 既にフォローしている場合は何もしない
-    if (user.following.some((u) => u.id === targetUser.id)) {
+    // すでにフォローしているか確認（必要に応じて）
+    const alreadyFollow = await prisma.follow.findFirst({
+      where: {
+        followerId: req.userId,
+        followingId: userId,
+      },
+    });
+    if (alreadyFollow) {
       return res.status(200).json({ message: "既にフォローしています。" });
     }
 
-    // フォローを追加
-    await prisma.user.update({
-      where: { id: req.userId },
+    // ✅ フォロー関係を作成
+    await prisma.follow.create({
       data: {
-        following: {
-          connect: { id: userId },
-        },
+        follower: { connect: { id: req.userId } },
+        following: { connect: { id: userId } },
       },
     });
 
     res.status(200).json({ message: "フォローしました。" });
   } catch (error) {
-    res.status(500).json(error.message);
+    res.status(500).json({ message: error.message });
   }
 });
 
