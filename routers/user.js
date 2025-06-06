@@ -83,7 +83,10 @@ router.post("/follow", isAuthenticated, async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { following: true },
+    });
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user || !targetUser) {
@@ -118,7 +121,15 @@ router.post("/unfollow", isAuthenticated, async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { following: true },
+    });
+    console.log("user:", user);
+    const user2 = await prisma.user.findUnique({
+      where: { id: req.userId },
+    });
+    console.log("user2:", user2);
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user || !targetUser) {
