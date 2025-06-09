@@ -82,13 +82,16 @@ router.get("/follow_count/:userId", async (req, res) => {
 
 // ユーザーのフォロー
 router.post("/follow", isAuthenticated, async (req, res) => {
-  const { userId } = req.body;
+  const { followingUserId } = req.body;
+  const loginUserId = req.userId;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.userId },
+      where: { id: loginUserId },
     });
-    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    const targetUser = await prisma.user.findUnique({
+      where: { id: followingUserId },
+    });
 
     if (!user || !targetUser) {
       return res
@@ -99,8 +102,8 @@ router.post("/follow", isAuthenticated, async (req, res) => {
     // すでにフォローしているか確認（必要に応じて）
     const alreadyFollow = await prisma.follow.findFirst({
       where: {
-        followerId: req.userId,
-        followingId: userId,
+        followerId: loginUserId,
+        followingId: followingUserId,
       },
     });
     if (alreadyFollow) {
@@ -110,8 +113,8 @@ router.post("/follow", isAuthenticated, async (req, res) => {
     // ✅ フォロー関係を作成
     await prisma.follow.create({
       data: {
-        follower: { connect: { id: req.userId } },
-        following: { connect: { id: userId } },
+        follower: { connect: { id: loginUserId } },
+        following: { connect: { id: followingUserId } },
       },
     });
 
@@ -123,44 +126,42 @@ router.post("/follow", isAuthenticated, async (req, res) => {
 
 // フォロー解除
 router.post("/unfollow", isAuthenticated, async (req, res) => {
-  const { userId } = req.body;
+  const { followingUserId } = req.body;
+  const loginUserId = req.userId;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.userId },
-      include: { following: true },
+    // 対象ユーザーが存在するか確認
+    const targetUser = await prisma.user.findUnique({
+      where: { id: followingUserId },
     });
-    console.log("user:", user);
-    const user2 = await prisma.user.findUnique({
-      where: { id: req.userId },
-    });
-    console.log("user2:", user2);
-    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user || !targetUser) {
+    if (!targetUser) {
       return res
         .status(404)
-        .json({ message: "ユーザーが見つかりませんでした。" });
+        .json({ message: "対象ユーザーが見つかりません。" });
     }
 
-    // まだフォローしていない場合は何もしない
-    if (!user.following.some((u) => u.id === targetUser.id)) {
+    // フォロー関係を確認
+    const followRelation = await prisma.follow.findFirst({
+      where: {
+        followerId: loginUserId,
+        followingId: followingUserId,
+      },
+    });
+
+    if (!followRelation) {
       return res.status(200).json({ message: "フォローしていません。" });
     }
 
     // フォロー解除
-    await prisma.user.update({
-      where: { id: req.userId },
-      data: {
-        following: {
-          disconnect: { id: userId },
-        },
-      },
+    await prisma.follow.delete({
+      where: { id: followRelation.id },
     });
 
-    res.status(200).json({ message: "フォロー解除しました。" });
+    return res.status(200).json({ message: "フォロー解除しました。" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("フォロー解除エラー:", error);
+    return res.status(500).json({ message: "サーバーエラー" });
   }
 });
 
