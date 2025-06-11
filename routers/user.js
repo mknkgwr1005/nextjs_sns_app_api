@@ -52,9 +52,11 @@ router.get("/profile/:userId", async (req, res) => {
   }
 });
 
-// ユーザーのフォローフォロワー数を確認
-router.get("/follow_count/:userId", async (req, res) => {
-  const { userId } = req.params;
+// ユーザーのフォローフォロワー数＋自分とのフォロー関係を確認
+// ※ログインユーザーの視点から見てのフォローカウント
+router.get("/follow_count/:userId", isAuthenticated, async (req, res) => {
+  const { userId } = req.params; // プロフィールのユーザーID
+  const loginUserId = req.userId; // 自分のID
 
   try {
     const user = await prisma.user.findUnique({
@@ -71,12 +73,33 @@ router.get("/follow_count/:userId", async (req, res) => {
         .json({ message: "ユーザーが見つかりませんでした。" });
     }
 
+    // フォロー関係を確認
+    const isFollowing = await prisma.follow.findFirst({
+      where: {
+        followerId: loginUserId,
+        followingId: parseInt(userId),
+      },
+    });
+
+    const isFollowed = await prisma.follow.findFirst({
+      where: {
+        followerId: parseInt(userId),
+        followingId: loginUserId,
+      },
+    });
+
+    const isOwnProfile = loginUserId === parseInt(userId);
+
     res.status(200).json({
-      followingCount: user.following.length,
-      followersCount: user.followers.length,
+      followingCount: user.following.length, // 対象ユーザーがフォローしてる数
+      followersCount: user.followers.length, // 対象ユーザーがフォローされてる数
+      isFollowing: !!isFollowing,
+      isFollowed: !!isFollowed,
+      isOwnProfile: isOwnProfile, // 自分のプロフィールかどうか
     });
   } catch (error) {
-    res.status(500).json(error.message);
+    console.error("フォローカウント取得エラー:", error);
+    res.status(500).json({ message: "サーバーエラー" });
   }
 });
 
