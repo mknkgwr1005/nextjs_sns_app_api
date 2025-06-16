@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const authRoute = require("./routers/auth");
 const postsRoute = require("./routers/posts");
@@ -35,6 +36,10 @@ app.use(
     credentials: true,
   })
 );
+
+// 🔧 JSONボディのサイズ上限を10MBに設定
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(express.json());
 
