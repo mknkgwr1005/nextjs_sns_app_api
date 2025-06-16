@@ -213,5 +213,33 @@ router.get(
     }
   }
 );
+/**
+ * プロフィールの編集
+ */
+router.put("/profile/edit", isAuthenticated, async (req, res) => {
+  const { bio, profileImageUrl, username } = req.body;
+
+  try {
+    const updatedProfile = await prisma.user.update({
+      where: { id: req.userId },
+      data: {
+        username,
+        profile: {
+          update: {
+            bio,
+            profileImageUrl,
+          },
+        },
+      },
+    });
+
+    console.log(updatedProfile);
+
+    res.status(200).json(updatedProfile);
+  } catch (error) {
+    console.error("プロフィール更新エラー:", error);
+    res.status(500).json({ message: "サーバーエラー" });
+  }
+});
 
 module.exports = router;
