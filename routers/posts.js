@@ -58,6 +58,39 @@ router.get("/get_latest_post", async (req, res) => {
   }
 });
 
+// フォロー中のユーザーのポストのみ取得
+router.get("/get_following_post", isAuthenticated, async (req, res) => {
+  const userId = req.userId;
+  try {
+    const followingList = await prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+
+    const ids = followingList.map((f) => f.followingId);
+
+    // 1回のクエリでまとめて取得
+    const latestPosts = await prisma.post.findMany({
+      orderBy: { createdAt: "desc" },
+      where: {
+        authorId: { in: ids },
+      },
+      include: {
+        author: {
+          include: {
+            profile: true,
+          },
+        },
+      },
+      take: 10, // ← 全体から10件だけ取得（必要に応じて調整）
+    });
+    return res.json(latestPosts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
 // ユーザーのポストを取得
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
