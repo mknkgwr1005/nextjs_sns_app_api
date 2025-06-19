@@ -130,7 +130,7 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
               },
             },
           },
-        }, // ← これが **必要**
+        }, 
       },
       take: 10, // ← 全体から10件だけ取得（必要に応じて調整）
     });
