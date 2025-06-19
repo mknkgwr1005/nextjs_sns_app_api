@@ -36,6 +36,38 @@ router.post("/post", isAuthenticated, async (req, res) => {
   }
 });
 
+// リプライ投稿
+router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
+  const { content } = req.body;
+  const parentId = parseInt(req.params.parentId);
+
+  if (!content) {
+    return res.status(400).json({ message: "投稿内容がありません" });
+  }
+
+  try {
+    const newPost = await prisma.post.create({
+      data: {
+        content,
+        authorId: req.userId,
+        parentId: parentId,
+      },
+      include: {
+        author: {
+          include: {
+            profile: true,
+          },
+        },
+      },
+    });
+
+    return res.status(201).json(newPost);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
 //最新のポスト取得
 router.get("/get_latest_post", async (req, res) => {
   try {
@@ -46,6 +78,15 @@ router.get("/get_latest_post", async (req, res) => {
         author: {
           include: {
             profile: true,
+          },
+        },
+        replies: {
+          include: {
+            author: {
+              include: {
+                profile: true,
+              },
+            },
           },
         },
       },
@@ -81,6 +122,15 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
             profile: true,
           },
         },
+        replies: {
+          include: {
+            author: {
+              include: {
+                profile: true,
+              },
+            },
+          },
+        }, // ← これが **必要**
       },
       take: 10, // ← 全体から10件だけ取得（必要に応じて調整）
     });
