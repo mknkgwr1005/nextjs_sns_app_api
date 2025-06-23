@@ -69,10 +69,16 @@ router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
 });
 
 //最新のポスト取得
-router.get("/get_latest_post", async (req, res) => {
+router.get("/get_latest_post", isAuthenticated, async (req, res) => {
+  const userId = Number.isInteger(req.userId) ? req.userId : null;
+
   try {
     const latestPosts = await prisma.post.findMany({
-      take: 10,
+      where: {
+        authorId: userId !== null ? { not: userId } : undefined,
+        parentId: null,
+      },
+      take: 30,
       orderBy: { createdAt: "desc" },
       include: {
         author: {
@@ -114,7 +120,8 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
     const latestPosts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
       where: {
-        authorId: { in: ids },
+        parentId: null,
+        authorId: { in: ids, not: userId },
       },
       include: {
         author: {
@@ -130,9 +137,9 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
               },
             },
           },
-        }, 
+        },
       },
-      take: 10, // ← 全体から10件だけ取得（必要に応じて調整）
+      take: 30, // ← 全体から10件だけ取得（必要に応じて調整）
     });
     return res.json(latestPosts);
   } catch (error) {
