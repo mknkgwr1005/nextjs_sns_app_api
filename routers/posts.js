@@ -81,6 +81,8 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
       take: 30,
       orderBy: { createdAt: "desc" },
       include: {
+        likes: true,
+        replies: true,
         author: {
           include: {
             profile: true,
@@ -124,6 +126,8 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
         authorId: { in: ids, not: userId },
       },
       include: {
+        likes: true,
+        replies: true,
         author: {
           include: {
             profile: true,
