@@ -166,4 +166,23 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
+// ユーザーのポストにいいねをする
+router.post("/add_like", async (req, res) => {
+  const { postId, userId } = req.body;
+
+  try {
+    const newLike = await prisma.like.create({
+      data: {
+        postId: postId,
+        userId: userId,
+      },
+    });
+
+    return res.status(201).json(newLike);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
 module.exports = router;
