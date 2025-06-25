@@ -82,19 +82,19 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
       orderBy: { createdAt: "desc" },
       include: {
         likes: true,
-        replies: true,
-        author: {
-          include: {
-            profile: true,
-          },
-        },
         replies: {
           include: {
+            likes: true,
             author: {
               include: {
                 profile: true,
               },
             },
+          },
+        },
+        author: {
+          include: {
+            profile: true,
           },
         },
       },
@@ -135,10 +135,16 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
         },
         replies: {
           include: {
+            likes: true,
             author: {
               include: {
                 profile: true,
               },
+            },
+          },
+          author: {
+            include: {
+              profile: true,
             },
           },
         },
@@ -187,6 +193,21 @@ router.post("/add_like", async (req, res) => {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
   }
+});
+
+// ポストのステータスを表示
+router.post("/get_post_status", async (req, res) => {
+  const { postId, userId } = req.body;
+
+  const existingLike = await prisma.like.findUnique({
+    where: {
+      userId_postId: {
+        userId: Number(userId),
+        postId: Number(postId),
+      },
+    },
+  });
+  return res.status(200).json({ isLiked: !!existingLike });
 });
 
 module.exports = router;
