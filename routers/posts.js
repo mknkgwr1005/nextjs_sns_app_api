@@ -1,7 +1,5 @@
 const router = require("express").Router();
 const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 
 const prisma = new PrismaClient();
@@ -190,11 +188,39 @@ router.post("/add_like", async (req, res) => {
   }
 });
 
+// ユーザーのポストをリポストをする
+router.post("/add_repost", async (req, res) => {
+  const { postId, userId } = req.body;
+
+  try {
+    const repost = await prisma.repost.create({
+      data: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+
+    return res.status(201).json(repost);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
 // ポストのステータスを表示
 router.post("/get_post_status", async (req, res) => {
   const { postId, userId } = req.body;
 
   const existingLike = await prisma.like.findUnique({
+    where: {
+      userId_postId: {
+        userId: Number(userId),
+        postId: Number(postId),
+      },
+    },
+  });
+
+  const existingRepost = await prisma.repost.findUnique({
     where: {
       userId_postId: {
         userId: Number(userId),
@@ -210,10 +236,15 @@ router.post("/get_post_status", async (req, res) => {
     include: {
       replies: true,
       likes: true,
+      reposts: true,
     },
   });
 
-  return res.status(200).json({ isLiked: !!existingLike, status: status });
+  return res.status(200).json({
+    isLiked: !!existingLike,
+    isReposted: !!existingRepost,
+    status: status,
+  });
 });
 
 module.exports = router;
