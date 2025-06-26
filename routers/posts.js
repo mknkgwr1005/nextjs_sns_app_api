@@ -142,11 +142,6 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
               },
             },
           },
-          author: {
-            include: {
-              profile: true,
-            },
-          },
         },
       },
       take: 30, // ← 全体から10件だけ取得（必要に応じて調整）
@@ -207,7 +202,18 @@ router.post("/get_post_status", async (req, res) => {
       },
     },
   });
-  return res.status(200).json({ isLiked: !!existingLike });
+
+  const status = await prisma.post.findUnique({
+    where: {
+      id: postId,
+    },
+    include: {
+      replies: true,
+      likes: true,
+    },
+  });
+
+  return res.status(200).json({ isLiked: !!existingLike, status: status });
 });
 
 module.exports = router;
