@@ -80,12 +80,9 @@ router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
 
 //最新のポスト取得
 router.get("/get_latest_post", isAuthenticated, async (req, res) => {
-  const userId = Number.isInteger(req.userId) ? req.userId : null;
-
   try {
     const latestPosts = await prisma.post.findMany({
       where: {
-        authorId: userId !== null ? { not: userId } : undefined,
         parentId: null,
       },
       include: {
@@ -109,9 +106,6 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
     });
 
     const reposts = await prisma.repost.findMany({
-      where: {
-        userId: { not: req.userId },
-      },
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
@@ -166,14 +160,15 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
       select: { followingId: true },
     });
 
-    const ids = followingList.map((f) => f.followingId);
+    let ids = followingList.map((f) => f.followingId);
+    ids.push(userId);
 
     // 1回のクエリでまとめて取得
     const latestPosts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
       where: {
         parentId: null,
-        authorId: { in: ids, not: userId },
+        authorId: { in: ids },
       },
       include: {
         likes: true,
@@ -197,9 +192,6 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
     });
 
     const reposts = await prisma.repost.findMany({
-      where: {
-        userId: { not: req.userId },
-      },
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
