@@ -195,6 +195,9 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
 
     const reposts = await prisma.repost.findMany({
       take: 30,
+      where: {
+        userId: { in: ids },
+      },
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
