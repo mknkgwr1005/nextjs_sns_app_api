@@ -103,6 +103,7 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
           },
         },
       },
+      take: 30,
     });
 
     const reposts = await prisma.repost.findMany({
@@ -125,6 +126,7 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
           },
         },
       },
+      take: 30,
     });
 
     const formattedPosts = latestPosts.map((p) => ({
@@ -189,6 +191,7 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
           },
         },
       },
+      take: 30,
     });
 
     const reposts = await prisma.repost.findMany({
@@ -211,6 +214,7 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
           },
         },
       },
+      take: 30,
     });
 
     const formattedPosts = latestPosts.map((p) => ({
