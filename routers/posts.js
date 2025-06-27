@@ -1,8 +1,7 @@
 const router = require("express").Router();
-const { PrismaClient } = require("@prisma/client");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 
-const prisma = new PrismaClient();
+const prisma = require("../lib/prisma");
 
 // ポスト投稿
 router.post("/post", isAuthenticated, async (req, res) => {
@@ -85,6 +84,7 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
       where: {
         parentId: null,
       },
+      take: 30,
       include: {
         likes: true,
         replies: {
@@ -103,10 +103,10 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
           },
         },
       },
-      take: 30,
     });
 
     const reposts = await prisma.repost.findMany({
+      take: 30,
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
@@ -126,7 +126,6 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
           },
         },
       },
-      take: 30,
     });
 
     const formattedPosts = latestPosts.map((p) => ({
@@ -172,6 +171,7 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
         parentId: null,
         authorId: { in: ids },
       },
+      take: 30,
       include: {
         likes: true,
         replies: true,
@@ -191,10 +191,10 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
           },
         },
       },
-      take: 30,
     });
 
     const reposts = await prisma.repost.findMany({
+      take: 30,
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
@@ -214,7 +214,6 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
           },
         },
       },
-      take: 30,
     });
 
     const formattedPosts = latestPosts.map((p) => ({

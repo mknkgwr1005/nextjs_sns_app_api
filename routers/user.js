@@ -1,8 +1,6 @@
 const router = require("express").Router();
-const { PrismaClient } = require("@prisma/client");
 const isAuthenticated = require("../middlewares/isAuthenticated");
-
-const prisma = new PrismaClient();
+const prisma = require("../lib/prisma");
 
 // ユーザーを見つける
 router.get("/find", isAuthenticated, async (req, res) => {
