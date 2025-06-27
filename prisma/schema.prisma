@@ -25,6 +25,7 @@ model User {
   followers Follow[] @relation("FollowerRelation")
   following Follow[] @relation("FollowingRelation")
   likes    Like[]
+  reposts  Repost[]
 }
 
 model Post {
@@ -38,6 +39,7 @@ model Post {
   parent    Post?    @relation("ReplyRelation", fields: [parentId], references: [id])
   likes     Like[]
   mediaUrl  String?  // 画像や動画のURL
+  reposts   Repost[]
 }
 
 model Profile {
@@ -63,6 +65,18 @@ model Like {
   id      Int  @id @default(autoincrement())
   userId  Int
   postId  Int
+
+  user    User @relation(fields: [userId], references: [id])
+  post    Post @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
+}
+
+model Repost{
+  id      Int  @id @default(autoincrement())
+  userId  Int
+  postId  Int
+  createdAt DateTime @default(now())
 
   user    User @relation(fields: [userId], references: [id])
   post    Post @relation(fields: [postId], references: [id])

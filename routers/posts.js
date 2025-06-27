@@ -1,7 +1,5 @@
 const router = require("express").Router();
 const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 
 const prisma = new PrismaClient();
@@ -29,7 +27,13 @@ router.post("/post", isAuthenticated, async (req, res) => {
       },
     });
 
-    return res.status(201).json(newPost);
+    const formattedPost = {
+      type: "post",
+      createdAt: newPost.createdAt,
+      post: newPost,
+    };
+
+    return res.status(201).json(formattedPost);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
@@ -61,7 +65,13 @@ router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
       },
     });
 
-    return res.status(201).json(newPost);
+    const formattedPost = {
+      type: "post",
+      createdAt: newPost.createdAt,
+      post: newPost,
+    };
+
+    return res.status(201).json(formattedPost);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
@@ -78,8 +88,6 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
         authorId: userId !== null ? { not: userId } : undefined,
         parentId: null,
       },
-      take: 30,
-      orderBy: { createdAt: "desc" },
       include: {
         likes: true,
         replies: {
@@ -100,7 +108,49 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
       },
     });
 
-    return res.json(latestPosts);
+    const reposts = await prisma.repost.findMany({
+      where: {
+        userId: { not: req.userId },
+      },
+      include: {
+        user: { include: { profile: true } }, // ← リポストした人
+        post: {
+          include: {
+            author: { include: { profile: true } },
+            likes: true,
+            replies: {
+              include: {
+                likes: true,
+                author: {
+                  include: {
+                    profile: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const formattedPosts = latestPosts.map((p) => ({
+      type: "post",
+      createdAt: p.createdAt,
+      post: p,
+    }));
+
+    const formattedReposts = reposts.map((r) => ({
+      type: "repost",
+      createdAt: r.createdAt,
+      post: r.post,
+      repostedBy: r.user,
+    }));
+
+    const timeline = [...formattedPosts, ...formattedReposts].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    return res.json(timeline);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
@@ -144,9 +194,51 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
           },
         },
       },
-      take: 30, // ← 全体から10件だけ取得（必要に応じて調整）
     });
-    return res.json(latestPosts);
+
+    const reposts = await prisma.repost.findMany({
+      where: {
+        userId: { not: req.userId },
+      },
+      include: {
+        user: { include: { profile: true } }, // ← リポストした人
+        post: {
+          include: {
+            author: { include: { profile: true } },
+            likes: true,
+            replies: {
+              include: {
+                likes: true,
+                author: {
+                  include: {
+                    profile: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const formattedPosts = latestPosts.map((p) => ({
+      type: "post",
+      createdAt: p.createdAt,
+      post: p,
+    }));
+
+    const formattedReposts = reposts.map((r) => ({
+      type: "repost",
+      createdAt: r.createdAt,
+      post: r.post,
+      repostedBy: r.user,
+    }));
+
+    const timeline = [...formattedPosts, ...formattedReposts].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    return res.json(timeline);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "サーバーエラーです" });
@@ -190,11 +282,62 @@ router.post("/add_like", async (req, res) => {
   }
 });
 
+// ユーザーのポストをリポストをする
+router.post("/add_repost", async (req, res) => {
+  const { postId, userId } = req.body;
+
+  try {
+    const repost = await prisma.repost.create({
+      data: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+
+    const repostWithUser = await prisma.repost.findUnique({
+      where: { id: repost.id },
+      include: {
+        user: { include: { profile: true } },
+        post: {
+          include: {
+            author: { include: { profile: true } },
+            likes: true,
+            replies: {
+              include: {
+                likes: true,
+                author: { include: { profile: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    return res.status(201).json({
+      type: "repost",
+      createdAt: repostWithUser.createdAt,
+      post: repostWithUser.post,
+      repostedBy: repostWithUser.user,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
 // ポストのステータスを表示
 router.post("/get_post_status", async (req, res) => {
   const { postId, userId } = req.body;
 
   const existingLike = await prisma.like.findUnique({
+    where: {
+      userId_postId: {
+        userId: Number(userId),
+        postId: Number(postId),
+      },
+    },
+  });
+
+  const existingRepost = await prisma.repost.findUnique({
     where: {
       userId_postId: {
         userId: Number(userId),
@@ -210,10 +353,15 @@ router.post("/get_post_status", async (req, res) => {
     include: {
       replies: true,
       likes: true,
+      reposts: true,
     },
   });
 
-  return res.status(200).json({ isLiked: !!existingLike, status: status });
+  return res.status(200).json({
+    isLiked: !!existingLike,
+    isReposted: !!existingRepost,
+    status: status,
+  });
 });
 
 module.exports = router;
