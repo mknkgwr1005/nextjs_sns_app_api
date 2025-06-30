@@ -101,9 +101,6 @@ router.get("/get_parent_post/:parentId", isAuthenticated, async (req, res) => {
         },
       },
     });
-
-    console.log(parentPost);
-
     return res.status(201).json(parentPost);
   } catch (error) {
     console.error(error);
