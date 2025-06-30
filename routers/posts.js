@@ -70,10 +70,43 @@ router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
       post: newPost,
     };
 
-    return res.status(201).json(formattedPost);
+    return res.status(201).json({ formattedPost: formattedPost });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
+  }
+});
+
+// 親ポスト取得
+router.get("/get_parent_post/:parentId", isAuthenticated, async (req, res) => {
+  const parentId = parseInt(req.params.parentId);
+
+  try {
+    const parentPost = await prisma.post.findUnique({
+      where: { id: parentId },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            profile: {
+              select: {
+                profileImageUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    console.log(parentPost);
+
+    return res.status(201).json(parentPost);
+  } catch (error) {
+    console.error(error);
   }
 });
 
