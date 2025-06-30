@@ -281,6 +281,7 @@ router.get("/:userId", async (req, res) => {
     const userPosts = await prisma.post.findMany({
       where: { authorId: parseInt(userId) },
       orderBy: { createdAt: "desc" },
+      take: 20,
       include: { author: true },
     });
 
