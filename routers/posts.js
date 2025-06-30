@@ -70,7 +70,7 @@ router.post("/reply/:parentId", isAuthenticated, async (req, res) => {
       post: newPost,
     };
 
-    return res.status(201).json({ formattedPost: formattedPost });
+    return res.status(201).json(formattedPost);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
