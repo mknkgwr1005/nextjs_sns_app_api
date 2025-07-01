@@ -109,12 +109,14 @@ router.get("/get_parent_post/:parentId", isAuthenticated, async (req, res) => {
 
 //最新のポスト取得
 router.get("/get_latest_post", isAuthenticated, async (req, res) => {
+  const { postLength } = req.params;
+
   try {
     const latestPosts = await prisma.post.findMany({
       where: {
         parentId: null,
       },
-      take: 30,
+      take: postLength,
       include: {
         likes: true,
         replies: {
@@ -132,11 +134,12 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
             profile: true,
           },
         },
+        _count: { select: { replies: true, likes: true, reposts: true } },
       },
     });
 
     const reposts = await prisma.repost.findMany({
-      take: 30,
+      take: postLength,
       include: {
         user: { include: { profile: true } }, // ← リポストした人
         post: {
@@ -184,7 +187,9 @@ router.get("/get_latest_post", isAuthenticated, async (req, res) => {
 
 // フォロー中のユーザーのポストのみ取得
 router.get("/get_following_post", isAuthenticated, async (req, res) => {
+  const { postLength } = req.params;
   const userId = req.userId;
+
   try {
     const followingList = await prisma.follow.findMany({
       where: { followerId: userId },
@@ -196,12 +201,12 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
 
     // 1回のクエリでまとめて取得
     const latestPosts = await prisma.post.findMany({
+      take: postLength,
       orderBy: { createdAt: "desc" },
       where: {
         parentId: null,
         authorId: { in: ids },
       },
-      take: 30,
       include: {
         likes: true,
         replies: true,
@@ -224,7 +229,7 @@ router.get("/get_following_post", isAuthenticated, async (req, res) => {
     });
 
     const reposts = await prisma.repost.findMany({
-      take: 30,
+      take: postLength,
       where: {
         userId: { in: ids },
       },
@@ -281,7 +286,7 @@ router.get("/:userId", async (req, res) => {
     const userPosts = await prisma.post.findMany({
       where: { authorId: parseInt(userId) },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 10,
       include: { author: true },
     });
 
