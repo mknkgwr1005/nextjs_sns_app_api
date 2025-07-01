@@ -355,29 +355,28 @@ router.post("/add_repost", async (req, res) => {
 
 // ポストのステータスを表示
 router.post("/get_post_status", async (req, res) => {
-  const { postId, userId } = req.body;
+  const { postIds, userId } = req.body;
 
-  const existingLike = await prisma.like.findUnique({
+  // 1. いいね情報をまとめて取得
+  const existingLikes = await prisma.like.findMany({
     where: {
-      userId_postId: {
-        userId: Number(userId),
-        postId: Number(postId),
-      },
+      userId: Number(userId),
+      postId: { in: postIds.map(Number) },
     },
   });
 
-  const existingRepost = await prisma.repost.findUnique({
+  // 2. リポスト情報をまとめて取得
+  const existingReposts = await prisma.repost.findMany({
     where: {
-      userId_postId: {
-        userId: Number(userId),
-        postId: Number(postId),
-      },
+      userId: Number(userId),
+      postId: { in: postIds.map(Number) },
     },
   });
 
-  const status = await prisma.post.findUnique({
+  // 3. 各ポストのステータスをまとめて取得
+  const statuses = await prisma.post.findMany({
     where: {
-      id: postId,
+      id: { in: postIds.map(Number) },
     },
     include: {
       replies: true,
@@ -387,9 +386,9 @@ router.post("/get_post_status", async (req, res) => {
   });
 
   return res.status(200).json({
-    isLiked: !!existingLike,
-    isReposted: !!existingRepost,
-    status: status,
+    likes: existingLikes,
+    reposts: existingReposts,
+    statuses: statuses,
   });
 });
 
