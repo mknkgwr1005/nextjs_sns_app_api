@@ -302,6 +302,32 @@ router.post("/add_like", async (req, res) => {
   const { postId, userId } = req.body;
 
   try {
+    // いいねの確認
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId: userId,
+          postId: postId,
+        },
+      },
+    });
+
+    // いいね解除
+    if (existingLike) {
+      await prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId: userId,
+            postId: postId,
+          },
+        },
+      });
+      return res
+        .status(200)
+        .json({ message: "いいね解除しました", isLiked: false });
+    }
+
+    // いいねをつける
     const newLike = await prisma.like.create({
       data: {
         postId: postId,
@@ -309,7 +335,7 @@ router.post("/add_like", async (req, res) => {
       },
     });
 
-    return res.status(201).json(newLike);
+    return res.status(201).json({ newLike, isLiked: true });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "サーバーエラーです" });
@@ -332,7 +358,17 @@ router.post("/add_repost", async (req, res) => {
     });
 
     if (existing) {
-      return res.status(409).json({ message: "すでにリポスト済みです" });
+      await prisma.repost.delete({
+        where: {
+          userId_postId: {
+            userId: userId,
+            postId: postId,
+          },
+        },
+      });
+      return res
+        .status(409)
+        .json({ message: "リポストを解除しました", isReposted: false });
     }
 
     // 新規リポスト
@@ -367,6 +403,7 @@ router.post("/add_repost", async (req, res) => {
       createdAt: repostWithUser.createdAt,
       post: repostWithUser.post,
       repostedBy: repostWithUser.user,
+      isReposted: true,
     });
   } catch (error) {
     console.log(error);
