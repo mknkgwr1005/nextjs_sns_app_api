@@ -321,6 +321,21 @@ router.post("/add_repost", async (req, res) => {
   const { postId, userId } = req.body;
 
   try {
+    // すでにリポストしていないか確認
+    const existing = await prisma.repost.findUnique({
+      where: {
+        userId_postId: {
+          userId: userId,
+          postId: postId,
+        },
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({ message: "すでにリポスト済みです" });
+    }
+
+    // 新規リポスト
     const repost = await prisma.repost.create({
       data: {
         userId: userId,
@@ -346,6 +361,7 @@ router.post("/add_repost", async (req, res) => {
         },
       },
     });
+
     return res.status(201).json({
       type: "repost",
       createdAt: repostWithUser.createdAt,
