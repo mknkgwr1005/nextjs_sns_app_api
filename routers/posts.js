@@ -5,7 +5,7 @@ const prisma = require("../lib/prisma");
 
 // ポスト投稿
 router.post("/post", isAuthenticated, async (req, res) => {
-  const { content } = req.body;
+  const { content, mediaUrl } = req.body;
 
   if (!content) {
     return res.status(400).json({ message: "投稿内容がありません" });
@@ -15,6 +15,7 @@ router.post("/post", isAuthenticated, async (req, res) => {
     const newPost = await prisma.post.create({
       data: {
         content,
+        mediaUrl,
         authorId: req.userId,
       },
       include: {
