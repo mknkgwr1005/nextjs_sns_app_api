@@ -33,23 +33,16 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res
       .status(401)
-      .json({ error: "your email address is not registered" });
-  }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-
-  if (!isPasswordValid) {
-    return res.status(401).json({ error: "your password is not correct" });
+      .json({ error: "your email address or password is not registered" });
   }
 
   const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
     expiresIn: "1d",
   });
 
-  // ここでcookieにセット
   res.cookie("token", token, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production", // 本番環境ではtrue
