@@ -9,7 +9,7 @@ const userRoute = require("./routers/user");
 
 require("dotenv").config();
 
-const PORT = 5000;
+const PORT = 3001;
 
 const allowedOrigins = [
   "http://localhost:3000",
