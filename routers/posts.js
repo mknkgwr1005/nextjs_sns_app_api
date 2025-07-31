@@ -451,4 +451,19 @@ router.post("/get_post_status", async (req, res) => {
   });
 });
 
+router.delete("/delete_post", isAuthenticated, async (req, res) => {
+  const { postId, userId, content } = req.query;
+
+  try {
+    const targetPost = await prisma.post.delete({
+      where: { id: parseInt(postId), authorId: userId, content: content },
+    });
+
+    return res.status(201).json(targetPost);
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json("ポストを削除できませんでした");
+  }
+});
+
 module.exports = router;
